@@ -22,11 +22,12 @@ from clawops.agent.plugins.openai_realtime import OpenAIRealtime
 from job import load
 from report import CALLS, CLOSING, FAREWELL, ending, report
 
-MAX_CALL_SEC = 180   # 목표 60~90초. 넘으면 우리가 끊는다.
+MAX_CALL_SEC = 300   # 목표 60~90초. 넘으면 우리가 끊는다.
 
 # 목소리: alloy ash ballad coral echo sage shimmer verse marin cedar
 # STT/TTS를 따로 교체하는 분리형(PipelineSession)은 CLAWOPS_PHONE_WORKFLOW.txt §10 참고.
 VOICE = "marin"
+
 
 def facts(job: dict) -> str:
     """[사실] 블록. guidance 가 말할 내용을 **전부** 들고 온다.
@@ -103,7 +104,8 @@ def from_number() -> str:
 async def main(job: dict, to: str) -> dict:
     agent = ClawOpsAgent(
         from_=from_number(),
-        session=OpenAIRealtime(system_prompt=prompt(job), language="ko", voice=VOICE),
+        session=OpenAIRealtime(system_prompt=prompt(
+            job), language="ko", voice=VOICE),
         machine_detection="Enable",  # 자동응답기 → NO_ANSWER
         recording=False,             # 워크플로우 §6: 녹취 미저장
         # SDK 기본 hang_up 은 설명이 "대화가 끝나면 끊어라" 라 제약이 안 걸린다.
@@ -172,7 +174,8 @@ async def main(job: dict, to: str) -> dict:
         if turns:  # ponytail: PoC용 로컬 저장. DB 에는 전사를 넣지 않는다
             CALLS.mkdir(exist_ok=True)
             out = CALLS / f"{to}_{datetime.now():%Y%m%d_%H%M%S}.json"
-            out.write_text(json.dumps(turns, ensure_ascii=False, indent=2), encoding="utf-8")
+            out.write_text(json.dumps(turns, ensure_ascii=False,
+                           indent=2), encoding="utf-8")
             print(f"대화 {len(turns)}턴 → {out.name}")
 
     r = await report(turns, job, provider_call_id=call.call_id, end_reason=end_reason)
@@ -186,7 +189,8 @@ async def main(job: dict, to: str) -> dict:
 def setup() -> None:
     """SDK 내부 로그를 보이게 한다. 이게 없으면 OpenAI Realtime 연결 실패가
     조용히 넘어가서 '전화는 되는데 말을 안 한다' 로만 보인다."""
-    logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
+    logging.basicConfig(level=logging.WARNING,
+                        format="%(levelname)s %(name)s: %(message)s")
     logging.getLogger("clawops").setLevel(logging.INFO)
     load_dotenv()
 
